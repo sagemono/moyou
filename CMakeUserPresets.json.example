@@ -1,0 +1,15 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "local",
+      "inherits": "windows-classic",
+      "displayName": "Local: installed vcpkg packages + research data for the tests",
+      "environment": { "VCPKG_ROOT": "C:/path/to/vcpkg" },
+      "cacheVariables": { "MOYOU_RESEARCH_DIR": "C:/path/to/moyou-research" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "local", "configurePreset": "local", "configuration": "Release" }
+  ]
+}

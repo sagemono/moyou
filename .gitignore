@@ -1,0 +1,20 @@
+build/
+dist/
+out/
+.vs/
+.vscode/
+CMakeUserPresets.json
+*.user
+vcpkg_installed/
+# firmware-derived files never belong in the repository
+*.qrc
+*.qrcf
+*.sprx
+*.prx
+*.elf
+*.vpo
+*.fpo
+*.mnu
+*.dds
+*.gtf
+*.orig

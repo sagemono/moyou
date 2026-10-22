@@ -1,0 +1,78 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  VCPKG_COMMIT: e5a1490e1409d175932ef6014519e9ae149ddb7c   # vcpkg with qtbase 6.10.0 (the development setup)
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg-cache,readwrite
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: vcpkg-cache
+          key: vcpkg-windows-${{ env.VCPKG_COMMIT }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-windows-${{ env.VCPKG_COMMIT }}-
+      - name: vcpkg
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force vcpkg-cache | Out-Null
+          git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT
+          git -C $env:VCPKG_ROOT checkout $env:VCPKG_COMMIT
+          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
+      - name: configure
+        run: cmake --preset windows
+      - name: build
+        run: cmake --build --preset windows
+      - name: test
+        run: ctest --test-dir build/windows -C Release --output-on-failure
+      - name: package
+        shell: pwsh
+        run: ./packaging/package.ps1 -Preset windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moyou-win64
+          path: dist/*.zip
+
+  linux:
+    runs-on: ubuntu-24.04
+    continue-on-error: true   # first Linux builds of the Qt port are still being set up
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg-cache,readwrite
+    steps:
+      - uses: actions/checkout@v4
+      - name: packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build autoconf automake libtool pkg-config bison flex \
+            libgl1-mesa-dev libglu1-mesa-dev libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libx11-xcb-dev \
+            libxcb1-dev libxcb-cursor-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev \
+            libxcb-randr0-dev libxcb-render-util0-dev libxcb-shape0-dev libxcb-shm0-dev libxcb-sync-dev \
+            libxcb-xfixes0-dev libxcb-xinerama0-dev libxcb-xkb-dev libxext-dev libxfixes-dev libxi-dev \
+            libxrender-dev libfontconfig1-dev libfreetype-dev libegl1-mesa-dev
+      - uses: actions/cache@v4
+        with:
+          path: vcpkg-cache
+          key: vcpkg-linux-${{ env.VCPKG_COMMIT }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-linux-${{ env.VCPKG_COMMIT }}-
+      - name: vcpkg
+        run: |
+          mkdir -p vcpkg-cache
+          git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT"
+          git -C "$VCPKG_ROOT" checkout "$VCPKG_COMMIT"
+          "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
+      - name: configure
+        run: cmake --preset linux
+      - name: build
+        run: cmake --build --preset linux
+      - name: test
+        run: ctest --test-dir build/linux --output-on-failure

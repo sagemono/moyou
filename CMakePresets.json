@@ -1,0 +1,55 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "windows",
+      "inherits": "base",
+      "displayName": "Windows x64 (Visual Studio 2022, vcpkg manifest)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "cacheVariables": { "VCPKG_TARGET_TRIPLET": "x64-windows" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "windows-classic",
+      "inherits": "windows",
+      "displayName": "Windows x64 using already-installed vcpkg packages (no manifest build)",
+      "cacheVariables": { "VCPKG_MANIFEST_MODE": "OFF" }
+    },
+    {
+      "name": "linux",
+      "inherits": "base",
+      "displayName": "Linux (Ninja, vcpkg manifest)",
+      "generator": "Ninja",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "VCPKG_TARGET_TRIPLET": "x64-linux" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    },
+    {
+      "name": "linux-system",
+      "displayName": "Linux using the distribution's Qt 6 and zlib (no vcpkg)",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "generator": "Ninja",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "windows", "configurePreset": "windows", "configuration": "Release" },
+    { "name": "windows-classic", "configurePreset": "windows-classic", "configuration": "Release" },
+    { "name": "linux", "configurePreset": "linux" },
+    { "name": "linux-system", "configurePreset": "linux-system" }
+  ],
+  "testPresets": [
+    { "name": "windows-classic", "configurePreset": "windows-classic", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "linux", "configurePreset": "linux", "output": { "outputOnFailure": true } },
+    { "name": "linux-system", "configurePreset": "linux-system", "output": { "outputOnFailure": true } }
+  ]
+}

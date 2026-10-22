@@ -1,0 +1,2 @@
+// The executable's icon in Explorer and the taskbar (resources/icons/moyou.ico, from tools/make_icons.py).
+IDI_ICON1 ICON "../icons/moyou.ico"
